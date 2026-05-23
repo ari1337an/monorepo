@@ -12,4 +12,4 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - workspace_database_volume:/var/lib/postgresql/data
+      - workspace_database_volume:/var/lib/postgresql
