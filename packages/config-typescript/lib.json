@@ -2,7 +2,8 @@
   "extends": "./base.json",
   "compilerOptions": {
     "outDir": "dist",
-    "noEmit": false
+    "noEmit": false,
+    "allowImportingTsExtensions": false
   },
   "exclude": ["node_modules", "dist"]
 }
