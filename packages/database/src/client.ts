@@ -1,10 +1,15 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { config } from "dotenv";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { Pool } from "pg"; // Import the Pool
+import { Pool } from "pg";
 import { PrismaClient } from "../generated/client";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+config({ path: path.resolve(__dirname, "../../../.env") });
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
 
-// 1. Create the Pool specifically for the adapter
 const connectionString = process.env.DATABASE_URL;
 
 const pool = new Pool({
