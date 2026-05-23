@@ -10,12 +10,12 @@
       "db:migrate": "prisma migrate dev",
       "db:push": "prisma db push",
       "db:seed": "tsx src/seed.ts",
-      "dev": "tsup src/* --watch",
+      "dev": "prisma studio",
       "format": "prisma format",
       "db:generate": "prisma generate",
       "lint": "eslint . --max-warnings 0",
-      "prebuild": "pnpm run db:generate",
-      "predev": "pnpm run db:generate",
+      "prebuild": "pnpm run db:generate && pnpm run db:push",
+      "predev": "pnpm run db:generate && pnpm run db:push",
       "db:studio": "prisma studio"
     },
     "dependencies": {
@@ -32,8 +32,7 @@
       "eslint": "catalog:",
       "prisma": "catalog:",
       "rimraf": "catalog:",
-      "tsup": "catalog:",
       "tsx": "catalog:",
       "typescript": "catalog:"
-    }
   }
+}

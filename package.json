@@ -11,7 +11,8 @@
     "node": "^24.0.0"
   },
   "scripts": {
-    "dev": "turbo dev",
+    "dev": "turbo dev --filter=!@workspace/database",
+    "dev:studio": "turbo dev --filter=!@workspace/database & pnpm db:studio",
     "build": "turbo build",
     "lint": "turbo lint",
     "check-types": "turbo check-types",
