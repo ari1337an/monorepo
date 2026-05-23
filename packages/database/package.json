@@ -4,7 +4,8 @@
     "private": true,
     "type": "module",
     "exports": {
-      ".": "./src/client.ts"
+      ".": "./src/client.ts",
+      "./testing": "./src/testing.ts"
     },
     "scripts": {
       "db:migrate": "prisma migrate dev",
@@ -30,6 +31,7 @@
       "@workspace/config-typescript": "workspace:*",
       "@types/pg": "catalog:",
       "eslint": "catalog:",
+      "jest-mock-extended": "catalog:",
       "prisma": "catalog:",
       "rimraf": "catalog:",
       "tsx": "catalog:",

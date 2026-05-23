@@ -7,7 +7,8 @@
     "dev": "tsx watch src/main.ts",
     "build": "tsc",
     "lint": "eslint . --max-warnings 0",
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "test": "LOG_LEVEL=silent NODE_OPTIONS='--experimental-vm-modules' jest --verbose"
   },
   "dependencies": {
     "@workspace/database": "workspace:*",
@@ -18,12 +19,20 @@
     "uuid": "catalog:"
   },
   "devDependencies": {
+    "@jest/globals": "catalog:",
     "@types/cors": "catalog:",
     "@types/express": "catalog:",
+    "@types/jest": "catalog:",
     "@types/node": "catalog:",
+    "@types/supertest": "catalog:",
     "@workspace/config-eslint": "workspace:*",
+    "@workspace/config-jest": "workspace:*",
     "@workspace/config-typescript": "workspace:*",
     "eslint": "catalog:",
+    "jest": "catalog:",
+    "jest-mock-extended": "catalog:",
+    "supertest": "catalog:",
+    "ts-jest": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:"
   }
