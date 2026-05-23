@@ -1,0 +1,15 @@
+volumes:
+  workspace_database_volume:
+
+services:
+  workspace_database:
+    image: postgres:18-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=database_name
+    ports:
+      - "5432:5432"
+    volumes:
+      - workspace_database_volume:/var/lib/postgresql/data

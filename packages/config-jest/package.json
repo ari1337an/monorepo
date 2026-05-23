@@ -1,0 +1,27 @@
+{
+  "name": "@workspace/config-jest",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "files": [
+    "base.js",
+    "node.js",
+    "react.js"
+  ],
+  "exports": {
+    "./base": "./base.js",
+    "./node": "./node.js",
+    "./react": "./react.js"
+  },
+  "peerDependencies": {
+    "jest": "catalog:",
+    "typescript": "catalog:"
+  },
+  "devDependencies": {
+    "jest": "catalog:",
+    "typescript": "catalog:"
+  },
+  "dependencies": {
+    "ts-jest": "catalog:"
+  }
+}
