@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import type { IController } from "@/infrastructure/controllers/protocols/index";
 import type { ICreateUserUseCase } from "@/domain/user/use-cases/index";
+import { sendOk, sendFailed } from "@/shared/api-response/index";
 
 export class CreateUserController implements IController {
   constructor(private readonly createUserUseCase: ICreateUserUseCase) {}
@@ -10,18 +11,11 @@ export class CreateUserController implements IController {
 
     if (result.isLeft()) {
       const error = result.value;
-      if (error.name === "InvalidParamError") {
-        response.status(400).json({ error: error.message });
-        return;
-      }
-      if (error.name === "AlreadyExistsError") {
-        response.status(409).json({ error: error.message });
-        return;
-      }
+      const statusCode = error.name === "AlreadyExistsError" ? 409 : 400;
+      sendFailed(response, error.code, error.message, statusCode);
+      return;
     }
 
-    if (result.isRight()) {
-      response.status(201).json({ user: result.value });
-    }
+    sendOk(response, { user: result.value }, 201);
   }
 }

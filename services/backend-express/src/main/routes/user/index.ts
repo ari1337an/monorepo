@@ -1,4 +1,4 @@
-import { type Router as RouterType, Router, type Request, type Response } from "express";
+import { type Router as RouterType, Router, type Request, type Response, type NextFunction } from "express";
 import {
   makeCreateUserFactory,
   makeGetAllUsersFactory,
@@ -15,10 +15,20 @@ const createUserController = makeCreateUserFactory();
 const updateUserController = makeUpdateUserFactory();
 const deleteUserController = makeDeleteUserFactory();
 
-router.get("/", (req: Request, res: Response) => getAllUsersController.execute(req, res));
-router.get("/:id", (req: Request, res: Response) => getUserByIdController.execute(req, res));
-router.post("/", (req: Request, res: Response) => createUserController.execute(req, res));
-router.patch("/:id", (req: Request, res: Response) => updateUserController.execute(req, res));
-router.delete("/:id", (req: Request, res: Response) => deleteUserController.execute(req, res));
+function wrap(controller: { execute: (req: Request, res: Response) => Promise<void> }) {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      await controller.execute(req, res);
+    } catch (err) {
+      next(err);
+    }
+  };
+}
+
+router.get("/", wrap(getAllUsersController));
+router.get("/:id", wrap(getUserByIdController));
+router.post("/", wrap(createUserController));
+router.patch("/:id", wrap(updateUserController));
+router.delete("/:id", wrap(deleteUserController));
 
 export default router;

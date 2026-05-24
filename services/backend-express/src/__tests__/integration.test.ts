@@ -18,11 +18,12 @@ describe("Full CRUD lifecycle", () => {
       .post("/api/users")
       .send({ name: "Lifecycle User", email: "lifecycle@test.com" });
     expect(createRes.status).toBe(201);
+    expect(createRes.body.status).toBe("OK");
 
     prisma.user.findUnique.mockResolvedValue({ id: "uuid-100", name: "Lifecycle User", email: "lifecycle@test.com" });
     const getRes = await request(app).get("/api/users/uuid-100");
     expect(getRes.status).toBe(200);
-    expect(getRes.body.user.name).toBe("Lifecycle User");
+    expect(getRes.body.data.user.name).toBe("Lifecycle User");
 
     prisma.user.findFirst.mockResolvedValue(null);
     prisma.user.update.mockResolvedValue({ id: "uuid-100", name: "Updated User", email: "lifecycle@test.com" });
@@ -30,7 +31,7 @@ describe("Full CRUD lifecycle", () => {
       .patch("/api/users/uuid-100")
       .send({ name: "Updated User" });
     expect(patchRes.status).toBe(200);
-    expect(patchRes.body.user.name).toBe("Updated User");
+    expect(patchRes.body.data.user.name).toBe("Updated User");
 
     prisma.user.delete.mockResolvedValue({ id: "uuid-100", name: "Updated User", email: "lifecycle@test.com" });
     const deleteRes = await request(app).delete("/api/users/uuid-100");
@@ -39,16 +40,22 @@ describe("Full CRUD lifecycle", () => {
     prisma.user.findUnique.mockResolvedValue(null);
     const afterDeleteRes = await request(app).get("/api/users/uuid-100");
     expect(afterDeleteRes.status).toBe(404);
+    expect(afterDeleteRes.body.status).toBe("FAILED");
   });
 });
 
 describe("Error handling", () => {
-  it("should never expose internal error details to the client", async () => {
+  it("should return FAILED with INTERNAL_SERVER_ERROR and never expose details", async () => {
     prisma.user.findMany.mockRejectedValue(new Error("password=secret in conn string"));
 
     const res = await request(app).get("/api/users");
 
     expect(res.status).toBe(500);
+    expect(res.body.status).toBe("FAILED");
+    expect(res.body.data).toBeNull();
+    expect(res.body.error.code).toBe("INTERNAL_SERVER_ERROR");
+    expect(res.body.error.message).toBe("Internal server error");
+    expect(JSON.stringify(res.body)).not.toContain("password");
   });
 
   it("should handle concurrent requests", async () => {
@@ -65,9 +72,9 @@ describe("Error handling", () => {
     ]);
 
     expect(listRes.status).toBe(200);
-    expect(listRes.body.users).toHaveLength(2);
+    expect(listRes.body.data.users).toHaveLength(2);
     expect(detailRes.status).toBe(200);
-    expect(detailRes.body.user.id).toBe("u1");
+    expect(detailRes.body.data.user.id).toBe("u1");
   });
 
   it("should correctly set CORS headers", async () => {
