@@ -1,10 +1,11 @@
+"use client";
 import { Button } from "@workspace/ui/components/button";
 
-function App() {
+export default function Home() {
   return (
     <div className="flex h-screen flex-col items-center justify-center gap-y-4">
       <h1 className="text-primary-foreground text-4xl font-bold">
-        Workspace Monorepo (Vite)
+        Workspace Monorepo (Next.js)
       </h1>
       <Button
         onClick={() =>
@@ -18,5 +19,3 @@ function App() {
     </div>
   );
 }
-
-export default App;
