@@ -65,10 +65,11 @@ async function main() {
 
   // Update docker-compose database name
   if (existsSync("docker-compose.yaml")) {
+    const slug = projectName.replace(/[^a-z0-9_]/gi, "_");
     let compose = readFileSync("docker-compose.yaml", "utf-8");
     compose = compose.replace("POSTGRES_DB=database_name", `POSTGRES_DB=${dbName}`);
-    compose = compose.replace("workspace_database_volume", `${projectName.replace(/[^a-z0-9_]/gi, "_")}_db_volume`);
-    compose = compose.replace("workspace_database:", `${projectName.replace(/[^a-z0-9_]/gi, "_")}_db:`);
+    compose = compose.replaceAll("workspace_database_volume", `${slug}_db_volume`);
+    compose = compose.replace("workspace_database:", `${slug}_db:`);
     writeFileSync("docker-compose.yaml", compose);
     console.log("  ✓ Updated docker-compose.yaml");
   }
