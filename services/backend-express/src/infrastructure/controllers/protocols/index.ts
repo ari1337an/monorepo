@@ -1,0 +1,5 @@
+import type { Request, Response } from "express";
+
+export interface IController {
+  execute(request: Request, response: Response): Promise<void>;
+}
