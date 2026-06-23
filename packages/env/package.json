@@ -1,0 +1,23 @@
+{
+  "name": "@workspace/env",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint . --max-warnings 0",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "dotenv": "catalog:"
+  },
+  "devDependencies": {
+    "@workspace/config-eslint": "workspace:*",
+    "@workspace/config-typescript": "workspace:*",
+    "@types/node": "catalog:",
+    "eslint": "catalog:",
+    "typescript": "catalog:"
+  }
+}
