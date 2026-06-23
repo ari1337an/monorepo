@@ -10,7 +10,7 @@ export function setupApp(): Express {
   app.use(express.json());
 
   app.get("/api/health", (_req: Request, res: Response) => {
-    sendOk(res, { uptime: process.uptime() });
+    sendOk(res, { status: "healthy", uptime: process.uptime() });
   });
 
   app.use("/api/users", userRoutes);
@@ -21,8 +21,10 @@ export function setupApp(): Express {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-    const code = "code" in err ? (err as { code: string }).code : "INTERNAL_SERVER_ERROR";
-    sendFailed(res, code, "Internal server error", 500);
+    if (process.env.NODE_ENV !== "production") {
+      console.error(err);
+    }
+    sendFailed(res, "INTERNAL_SERVER_ERROR", "Internal server error", 500);
   });
 
   return app;

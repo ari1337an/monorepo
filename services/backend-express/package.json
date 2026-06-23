@@ -14,6 +14,7 @@
     "@workspace/database": "workspace:*",
     "@workspace/logger": "workspace:*",
     "@workspace/utils": "workspace:*",
+    "@workspace/env": "workspace:*",
     "cors": "catalog:",
     "express": "catalog:",
     "uuid": "catalog:",

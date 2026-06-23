@@ -1,4 +1,4 @@
-import { PrismaUserRepository } from "@/infrastructure/repositories/user/user-repository";
+import { SqlUserRepository } from "@/infrastructure/repositories/user/user-repository";
 import { CreateUserUseCase } from "@/application/use-cases/user/create-user-usecase";
 import { GetAllUsersUseCase } from "@/application/use-cases/user/get-all-users-usecase";
 import { GetUserByIdUseCase } from "@/application/use-cases/user/get-user-by-id-usecase";
@@ -10,8 +10,9 @@ import { GetUserByIdController } from "@/infrastructure/controllers/user/get-use
 import { UpdateUserController } from "@/infrastructure/controllers/user/update-user-controller";
 import { DeleteUserController } from "@/infrastructure/controllers/user/delete-user-controller";
 import type { IController } from "@/infrastructure/controllers/protocols/index";
+import { getDatabase } from "@/shared/database/index";
 
-const userRepository = new PrismaUserRepository();
+const userRepository = new SqlUserRepository(getDatabase());
 
 export function makeCreateUserFactory(): IController {
   return new CreateUserController(new CreateUserUseCase(userRepository));
