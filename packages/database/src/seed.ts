@@ -1,37 +1,40 @@
-import "dotenv/config";
-import { prisma } from "./client";
+import { loadEnv } from "@workspace/env";
+import { randomUUID } from "node:crypto";
+import { createDatabase } from "./index";
+import type { SupportedClient } from "./types";
 
-import type { User } from "../generated/client";
+loadEnv();
 
 const DEFAULT_USERS = [
-  // Add your own user to pre-populate the database with
   {
+    id: randomUUID(),
     name: "Md Sahadul Hasan Arian",
     email: "no-reply@gmail.com",
   },
-] as Array<Partial<User>>;
+];
+
+const client = (process.env.DATABASE_CLIENT || "postgres") as SupportedClient;
+
+const db = createDatabase({
+  client,
+  connection: process.env.DATABASE_URL!,
+});
 
 (async () => {
   try {
-    await Promise.all(
-      DEFAULT_USERS.map((user) =>
-        prisma.user.upsert({
-          where: {
-            email: user.email!,
-          },
-          update: {
-            ...user,
-          },
-          create: {
-            ...user,
-          },
-        }),
-      ),
-    );
+    for (const user of DEFAULT_USERS) {
+      const existing = await db.table("User").where({ email: user.email }).first();
+      if (existing) {
+        await db.table("User").where({ email: user.email }).update(user);
+      } else {
+        await db.table("User").insert(user);
+      }
+    }
+    console.log("Seed completed successfully");
   } catch (error) {
     console.error(error);
     process.exit(1);
   } finally {
-    await prisma.$disconnect();
+    await db.disconnect();
   }
 })();

@@ -1,10 +1,17 @@
 import { mockDeep, mockReset, type DeepMockProxy } from "jest-mock-extended";
-import { type PrismaClient } from "../generated/client";
+import type { Knex } from "knex";
+import type { Database } from "./database";
 
-export type MockPrismaClient = DeepMockProxy<PrismaClient>;
+export type MockDatabase = DeepMockProxy<Database>;
 
-export function createPrismaMock(): MockPrismaClient {
-  return mockDeep<PrismaClient>();
+export function createDatabaseMock(): MockDatabase {
+  return mockDeep<Database>();
+}
+
+export type MockKnexQueryBuilder = DeepMockProxy<Knex.QueryBuilder>;
+
+export function createQueryBuilderMock(): MockKnexQueryBuilder {
+  return mockDeep<Knex.QueryBuilder>();
 }
 
 export { mockReset };

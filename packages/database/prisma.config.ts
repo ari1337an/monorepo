@@ -1,17 +1,14 @@
-import { config } from 'dotenv'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-import { defineConfig, env } from 'prisma/config'
+import { loadEnv } from "@workspace/env";
+import { defineConfig, env } from "prisma/config";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-config({ path: path.resolve(__dirname, '../../.env') })
+loadEnv();
 
 export default defineConfig({
-  schema: 'prisma/schema.prisma',
+  schema: "prisma/schema.prisma",
   migrations: {
-    path: 'prisma/migrations',
+    path: "prisma/migrations",
   },
   datasource: {
-    url: env('DATABASE_URL'),
+    url: env("DATABASE_URL"),
   },
-})
+});

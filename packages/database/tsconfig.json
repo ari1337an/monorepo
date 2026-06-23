@@ -1,6 +1,6 @@
 {
   "extends": "@workspace/config-typescript/lib.json",
-  "include": ["**/*.ts", "tsup.config.ts"],
+  "include": ["src/**/*.ts"],
   "exclude": ["node_modules"],
   "compilerOptions": {
     "strictNullChecks": true
