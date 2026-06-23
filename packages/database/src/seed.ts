@@ -1,7 +1,6 @@
 import { loadEnv } from "@workspace/env";
 import { randomUUID } from "node:crypto";
 import { createDatabase } from "./index";
-import type { SupportedClient } from "./types";
 
 loadEnv();
 
@@ -13,12 +12,7 @@ const DEFAULT_USERS = [
   },
 ];
 
-const client = (process.env.DATABASE_CLIENT || "postgres") as SupportedClient;
-
-const db = createDatabase({
-  client,
-  connection: process.env.DATABASE_URL!,
-});
+const db = createDatabase(process.env.DATABASE_URL!);
 
 (async () => {
   try {

@@ -6,7 +6,7 @@ export class MySQLAdapter implements IDatabaseAdapter {
     return {
       client: "mysql2",
       connection,
-      pool: { min: 2, max: 10 },
+      pool: { min: 0, max: 10 },
     };
   }
 }

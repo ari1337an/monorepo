@@ -9,25 +9,31 @@
   },
   "scripts": {
     "db:migrate": "prisma migrate dev",
-    "db:push": "prisma db push",
-    "db:seed": "tsx src/seed.ts",
+    "db:push": "tsx src/push-schema.ts",
+    "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
     "db:format": "prisma format",
-    "lint": "eslint . --max-warnings 0"
+    "lint": "eslint . --max-warnings 0",
+    "test": "NODE_OPTIONS='--experimental-vm-modules' jest --verbose"
   },
   "dependencies": {
+    "@libsql/client": "catalog:",
     "@workspace/env": "workspace:*",
     "better-sqlite3": "catalog:",
     "knex": "catalog:",
+    "knex-libsql-client": "catalog:",
     "mysql2": "catalog:",
     "pg": "catalog:"
   },
   "devDependencies": {
-    "@workspace/config-eslint": "workspace:*",
-    "@workspace/config-typescript": "workspace:*",
+    "@jest/globals": "catalog:",
     "@types/better-sqlite3": "catalog:",
     "@types/pg": "catalog:",
+    "@workspace/config-eslint": "workspace:*",
+    "@workspace/config-jest": "workspace:*",
+    "@workspace/config-typescript": "workspace:*",
     "eslint": "catalog:",
+    "jest": "catalog:",
     "jest-mock-extended": "catalog:",
     "prisma": "catalog:",
     "tsx": "catalog:",

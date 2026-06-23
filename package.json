@@ -26,5 +26,6 @@
     "prettier": "catalog:",
     "prettier-plugin-tailwindcss": "catalog:",
     "turbo": "catalog:"
-  }
+  },
+  "dependencies": {}
 }

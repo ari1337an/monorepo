@@ -2,11 +2,13 @@ import type { SupportedClient, IDatabaseAdapter } from "../types";
 import { PostgresAdapter } from "./postgres.adapter";
 import { MySQLAdapter } from "./mysql.adapter";
 import { SQLiteAdapter } from "./sqlite.adapter";
+import { LibSQLAdapter } from "./libsql.adapter";
 
 const adapterRegistry: Record<SupportedClient, () => IDatabaseAdapter> = {
   postgres: () => new PostgresAdapter(),
   mysql: () => new MySQLAdapter(),
   sqlite: () => new SQLiteAdapter(),
+  libsql: () => new LibSQLAdapter(),
 };
 
 export function resolveAdapter(client: SupportedClient): IDatabaseAdapter {

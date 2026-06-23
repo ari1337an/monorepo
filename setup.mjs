@@ -16,26 +16,20 @@ const SERVICES = [
 const DATABASES = [
   { key: "1", client: "postgres", label: "PostgreSQL", provider: "postgresql" },
   { key: "2", client: "mysql", label: "MySQL", provider: "mysql" },
-  { key: "3", client: "sqlite", label: "SQLite", provider: "sqlite" },
+  { key: "3", client: "sqlite", label: "SQLite (local)", provider: "sqlite" },
+  { key: "4", client: "libsql", label: "Turso / LibSQL (remote SQLite)", provider: "sqlite" },
 ];
 
 function generateEnv(client, dbName) {
   switch (client) {
     case "postgres":
-      return [
-        `DATABASE_CLIENT="postgres"`,
-        `DATABASE_URL="postgresql://postgres:postgres@localhost:5432/${dbName}?schema=public"`,
-      ].join("\n") + "\n";
+      return `DATABASE_URL="postgresql://postgres:postgres@localhost:5432/${dbName}?schema=public"\n`;
     case "mysql":
-      return [
-        `DATABASE_CLIENT="mysql"`,
-        `DATABASE_URL="mysql://root:root@localhost:3306/${dbName}"`,
-      ].join("\n") + "\n";
+      return `DATABASE_URL="mysql://root:root@localhost:3306/${dbName}"\n`;
     case "sqlite":
-      return [
-        `DATABASE_CLIENT="sqlite"`,
-        `DATABASE_URL="./data/${dbName}.db"`,
-      ].join("\n") + "\n";
+      return `DATABASE_URL="sqlite:./data/${dbName}.db"\n`;
+    case "libsql":
+      return `DATABASE_URL="libsql://your-db.turso.io?authToken=YOUR_AUTH_TOKEN"\n`;
   }
 }
 
