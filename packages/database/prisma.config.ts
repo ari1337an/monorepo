@@ -1,14 +1,15 @@
-import { loadEnv } from "@workspace/env";
-import { defineConfig, env } from "prisma/config";
+import path from "node:path";
+import { defineConfig } from "prisma/config";
 
-loadEnv();
+const localDb = `file:${path.resolve(import.meta.dirname, "schema/local.db")}`;
 
 export default defineConfig({
-  schema: "prisma/schema.prisma",
+  schema: "schema/",
   migrations: {
-    path: "prisma/migrations",
+    path: "schema/migrations",
+    seed: "tsx src/seed.ts",
   },
   datasource: {
-    url: env("DATABASE_URL"),
+    url: localDb,
   },
 });
