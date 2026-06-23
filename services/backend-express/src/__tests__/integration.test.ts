@@ -1,18 +1,18 @@
 import { describe, it, expect } from "@jest/globals";
-import { type MockPrismaClient } from "@workspace/database/testing";
+import type { MockUserRepository } from "./repository-mock";
 
-const { prismaMock } = await import("./prisma-mock");
+const { mockUserRepository } = await import("./repository-mock");
 const { setupApp } = await import("../main/settings/app");
 
 const request = (await import("supertest")).default;
 
-const prisma = prismaMock as MockPrismaClient;
+const repo = mockUserRepository as MockUserRepository;
 const app = setupApp();
 
 describe("Full CRUD lifecycle", () => {
   it("should create, read, update, and delete a user in sequence", async () => {
-    prisma.user.findFirst.mockResolvedValue(null);
-    prisma.user.create.mockResolvedValue({ id: "uuid-100", name: "Lifecycle User", email: "lifecycle@test.com" });
+    repo.getByEmail.mockResolvedValue(undefined);
+    repo.create.mockResolvedValue(undefined);
 
     const createRes = await request(app)
       .post("/api/users")
@@ -20,25 +20,27 @@ describe("Full CRUD lifecycle", () => {
     expect(createRes.status).toBe(201);
     expect(createRes.body.status).toBe("OK");
 
-    prisma.user.findUnique.mockResolvedValue({ id: "uuid-100", name: "Lifecycle User", email: "lifecycle@test.com" });
-    const getRes = await request(app).get("/api/users/uuid-100");
+    const createdUser = createRes.body.data.user;
+
+    repo.getById.mockResolvedValue(createdUser);
+    const getRes = await request(app).get(`/api/users/${createdUser.id}`);
     expect(getRes.status).toBe(200);
     expect(getRes.body.data.user.name).toBe("Lifecycle User");
 
-    prisma.user.findFirst.mockResolvedValue(null);
-    prisma.user.update.mockResolvedValue({ id: "uuid-100", name: "Updated User", email: "lifecycle@test.com" });
+    repo.getByEmail.mockResolvedValue(undefined);
+    repo.update.mockResolvedValue({ ...createdUser, name: "Updated User" });
     const patchRes = await request(app)
-      .patch("/api/users/uuid-100")
+      .patch(`/api/users/${createdUser.id}`)
       .send({ name: "Updated User" });
     expect(patchRes.status).toBe(200);
     expect(patchRes.body.data.user.name).toBe("Updated User");
 
-    prisma.user.delete.mockResolvedValue({ id: "uuid-100", name: "Updated User", email: "lifecycle@test.com" });
-    const deleteRes = await request(app).delete("/api/users/uuid-100");
+    repo.delete.mockResolvedValue(true);
+    const deleteRes = await request(app).delete(`/api/users/${createdUser.id}`);
     expect(deleteRes.status).toBe(204);
 
-    prisma.user.findUnique.mockResolvedValue(null);
-    const afterDeleteRes = await request(app).get("/api/users/uuid-100");
+    repo.getById.mockResolvedValue(undefined);
+    const afterDeleteRes = await request(app).get(`/api/users/${createdUser.id}`);
     expect(afterDeleteRes.status).toBe(404);
     expect(afterDeleteRes.body.status).toBe("FAILED");
   });
@@ -46,7 +48,7 @@ describe("Full CRUD lifecycle", () => {
 
 describe("Error handling", () => {
   it("should return FAILED with INTERNAL_SERVER_ERROR and never expose details", async () => {
-    prisma.user.findMany.mockRejectedValue(new Error("password=secret in conn string"));
+    repo.getAll.mockRejectedValue(new Error("password=secret in conn string"));
 
     const res = await request(app).get("/api/users");
 
@@ -63,8 +65,8 @@ describe("Error handling", () => {
       { id: "u1", name: "User 1", email: "u1@test.com" },
       { id: "u2", name: "User 2", email: "u2@test.com" },
     ];
-    prisma.user.findMany.mockResolvedValue(users);
-    prisma.user.findUnique.mockResolvedValue(users[0]!);
+    repo.getAll.mockResolvedValue(users);
+    repo.getById.mockResolvedValue(users[0]);
 
     const [listRes, detailRes] = await Promise.all([
       request(app).get("/api/users"),
@@ -78,7 +80,7 @@ describe("Error handling", () => {
   });
 
   it("should correctly set CORS headers", async () => {
-    prisma.user.findMany.mockResolvedValue([]);
+    repo.getAll.mockResolvedValue([]);
 
     const res = await request(app).get("/api/users");
 

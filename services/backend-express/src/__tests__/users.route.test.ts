@@ -1,12 +1,12 @@
 import { describe, it, expect } from "@jest/globals";
-import { type MockPrismaClient } from "@workspace/database/testing";
+import type { MockUserRepository } from "./repository-mock";
 
-const { prismaMock } = await import("./prisma-mock");
+const { mockUserRepository } = await import("./repository-mock");
 const { setupApp } = await import("../main/settings/app");
 
 const request = (await import("supertest")).default;
 
-const prisma = prismaMock as MockPrismaClient;
+const repo = mockUserRepository as MockUserRepository;
 const app = setupApp();
 
 describe("GET /api/users", () => {
@@ -15,7 +15,7 @@ describe("GET /api/users", () => {
       { id: "user-1", name: "Alice", email: "alice@test.com" },
       { id: "user-2", name: "Bob", email: "bob@test.com" },
     ];
-    prisma.user.findMany.mockResolvedValue(mockUsers);
+    repo.getAll.mockResolvedValue(mockUsers);
 
     const res = await request(app).get("/api/users");
 
@@ -26,7 +26,7 @@ describe("GET /api/users", () => {
   });
 
   it("should return an empty array when no users exist", async () => {
-    prisma.user.findMany.mockResolvedValue([]);
+    repo.getAll.mockResolvedValue([]);
 
     const res = await request(app).get("/api/users");
 
@@ -39,7 +39,7 @@ describe("GET /api/users", () => {
 describe("GET /api/users/:id", () => {
   it("should return a user by id with status OK", async () => {
     const mockUser = { id: "user-1", name: "Alice", email: "alice@test.com" };
-    prisma.user.findUnique.mockResolvedValue(mockUser);
+    repo.getById.mockResolvedValue(mockUser);
 
     const res = await request(app).get("/api/users/user-1");
 
@@ -50,7 +50,7 @@ describe("GET /api/users/:id", () => {
   });
 
   it("should return FAILED with NOT_FOUND when user does not exist", async () => {
-    prisma.user.findUnique.mockResolvedValue(null);
+    repo.getById.mockResolvedValue(undefined);
 
     const res = await request(app).get("/api/users/non-existent");
 
@@ -63,8 +63,8 @@ describe("GET /api/users/:id", () => {
 
 describe("POST /api/users", () => {
   it("should create a new user and return 201 with status OK", async () => {
-    prisma.user.findFirst.mockResolvedValue(null);
-    prisma.user.create.mockResolvedValue({ id: "new-id", name: "Charlie", email: "charlie@test.com" });
+    repo.getByEmail.mockResolvedValue(undefined);
+    repo.create.mockResolvedValue(undefined);
 
     const res = await request(app)
       .post("/api/users")
@@ -103,7 +103,7 @@ describe("POST /api/users", () => {
   });
 
   it("should return FAILED with ALREADY_EXISTS when email is taken", async () => {
-    prisma.user.findFirst.mockResolvedValue({ id: "existing", name: "Existing", email: "taken@test.com" });
+    repo.getByEmail.mockResolvedValue({ id: "existing", name: "Existing", email: "taken@test.com" });
 
     const res = await request(app)
       .post("/api/users")
@@ -118,7 +118,7 @@ describe("POST /api/users", () => {
 
 describe("PATCH /api/users/:id", () => {
   it("should update a user's name and return OK", async () => {
-    prisma.user.update.mockResolvedValue({ id: "user-1", name: "Alice Updated", email: "alice@test.com" });
+    repo.update.mockResolvedValue({ id: "user-1", name: "Alice Updated", email: "alice@test.com" });
 
     const res = await request(app)
       .patch("/api/users/user-1")
@@ -148,7 +148,7 @@ describe("PATCH /api/users/:id", () => {
   });
 
   it("should return FAILED with NOT_FOUND when user does not exist", async () => {
-    prisma.user.update.mockRejectedValue({ code: "P2025" });
+    repo.update.mockResolvedValue(undefined);
 
     const res = await request(app)
       .patch("/api/users/ghost-id")
@@ -160,7 +160,7 @@ describe("PATCH /api/users/:id", () => {
   });
 
   it("should return FAILED with ALREADY_EXISTS when email conflicts", async () => {
-    prisma.user.findFirst.mockResolvedValue({ id: "other-user", name: "Other", email: "taken@test.com" });
+    repo.getByEmail.mockResolvedValue({ id: "other-user", name: "Other", email: "taken@test.com" });
 
     const res = await request(app)
       .patch("/api/users/user-1")
@@ -174,7 +174,7 @@ describe("PATCH /api/users/:id", () => {
 
 describe("DELETE /api/users/:id", () => {
   it("should delete a user and return 204", async () => {
-    prisma.user.delete.mockResolvedValue({ id: "user-1", name: "Alice", email: "alice@test.com" });
+    repo.delete.mockResolvedValue(true);
 
     const res = await request(app).delete("/api/users/user-1");
 
@@ -182,7 +182,7 @@ describe("DELETE /api/users/:id", () => {
   });
 
   it("should return FAILED with NOT_FOUND when user does not exist", async () => {
-    prisma.user.delete.mockRejectedValue({ code: "P2025" });
+    repo.delete.mockResolvedValue(false);
 
     const res = await request(app).delete("/api/users/ghost-id");
 
