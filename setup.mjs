@@ -8,10 +8,79 @@ import { basename, resolve } from "node:path";
 const rl = createInterface({ input: process.stdin, output: process.stdout });
 
 const SERVICES = [
-  { key: "1", name: "backend-express", label: "Backend (Express + Prisma + Clean Architecture)" },
+  { key: "1", name: "backend-express", label: "Backend (Express + Knex + Clean Architecture)" },
   { key: "2", name: "frontend-nextjs", label: "Frontend (Next.js + Tailwind)" },
   { key: "3", name: "frontend-vite", label: "Frontend (Vite + React + Tailwind)" },
 ];
+
+const DATABASES = [
+  { key: "1", client: "postgres", label: "PostgreSQL", provider: "postgresql" },
+  { key: "2", client: "mysql", label: "MySQL", provider: "mysql" },
+  { key: "3", client: "sqlite", label: "SQLite", provider: "sqlite" },
+];
+
+function generateEnv(client, dbName) {
+  switch (client) {
+    case "postgres":
+      return [
+        `DATABASE_CLIENT="postgres"`,
+        `DATABASE_URL="postgresql://postgres:postgres@localhost:5432/${dbName}?schema=public"`,
+      ].join("\n") + "\n";
+    case "mysql":
+      return [
+        `DATABASE_CLIENT="mysql"`,
+        `DATABASE_URL="mysql://root:root@localhost:3306/${dbName}"`,
+      ].join("\n") + "\n";
+    case "sqlite":
+      return [
+        `DATABASE_CLIENT="sqlite"`,
+        `DATABASE_URL="./data/${dbName}.db"`,
+      ].join("\n") + "\n";
+  }
+}
+
+function generateDockerCompose(slug, dbName, client) {
+  if (client === "postgres") {
+    return [
+      "volumes:",
+      `  ${slug}_db_volume:`,
+      "",
+      "services:",
+      `  ${slug}_db:`,
+      "    image: postgres:18-alpine",
+      "    restart: always",
+      "    environment:",
+      "      - POSTGRES_USER=postgres",
+      "      - POSTGRES_PASSWORD=postgres",
+      `      - POSTGRES_DB=${dbName}`,
+      "    ports:",
+      '      - "5432:5432"',
+      "    volumes:",
+      `      - ${slug}_db_volume:/var/lib/postgresql/data`,
+    ].join("\n") + "\n";
+  }
+
+  if (client === "mysql") {
+    return [
+      "volumes:",
+      `  ${slug}_db_volume:`,
+      "",
+      "services:",
+      `  ${slug}_db:`,
+      "    image: mysql:9-oracle",
+      "    restart: always",
+      "    environment:",
+      "      - MYSQL_ROOT_PASSWORD=root",
+      `      - MYSQL_DATABASE=${dbName}`,
+      "    ports:",
+      '      - "3306:3306"',
+      "    volumes:",
+      `      - ${slug}_db_volume:/var/lib/mysql`,
+    ].join("\n") + "\n";
+  }
+
+  return null;
+}
 
 async function main() {
   console.log("\n╔══════════════════════════════════════╗");
@@ -20,9 +89,17 @@ async function main() {
 
   const defaultName = basename(resolve("."));
   const projectName = (await rl.question(`Project name (${defaultName}): `)).trim() || defaultName;
+  const slug = projectName.replace(/[^a-z0-9_]/gi, "_");
 
-  const dbName = (await rl.question(`Database name (${projectName.replace(/[^a-z0-9_]/gi, "_")}): `)).trim()
-    || projectName.replace(/[^a-z0-9_]/gi, "_");
+  const dbName = (await rl.question(`Database name (${slug}): `)).trim() || slug;
+
+  console.log("\nDatabase engine:\n");
+  for (const db of DATABASES) {
+    console.log(`  ${db.key}. ${db.label}`);
+  }
+
+  const dbChoice = (await rl.question("\nSelect database (1): ")).trim() || "1";
+  const selectedDb = DATABASES.find((d) => d.key === dbChoice) ?? DATABASES[0];
 
   console.log("\nAvailable services:\n");
   for (const svc of SERVICES) {
@@ -41,8 +118,10 @@ async function main() {
     .map((key) => SERVICES.find((s) => s.key === key)?.name)
     .filter(Boolean);
 
-  console.log(`\n→ Project: ${projectName}`);
-  console.log(`→ Database: ${dbName}`);
+  const hasBackend = selectedNames.includes("backend-express");
+
+  console.log(`\n→ Project:  ${projectName}`);
+  console.log(`→ Database: ${selectedDb.label} (${dbName})`);
   console.log(`→ Services: ${selectedNames.join(", ")}\n`);
 
   // Remove unselected services
@@ -59,46 +138,52 @@ async function main() {
   }
 
   // Generate .env
-  const envContent = `DATABASE_URL="postgresql://postgres:postgres@localhost:5432/${dbName}?schema=public"\n`;
-  writeFileSync(".env", envContent);
+  writeFileSync(".env", generateEnv(selectedDb.client, dbName));
+  writeFileSync(".env.example", generateEnv(selectedDb.client, dbName));
   console.log("\n  ✓ Created .env");
 
-  // Update docker-compose database name
-  if (existsSync("docker-compose.yaml")) {
-    const slug = projectName.replace(/[^a-z0-9_]/gi, "_");
-    let compose = readFileSync("docker-compose.yaml", "utf-8");
-    compose = compose.replace("POSTGRES_DB=database_name", `POSTGRES_DB=${dbName}`);
-    compose = compose.replaceAll("workspace_database_volume", `${slug}_db_volume`);
-    compose = compose.replace("workspace_database:", `${slug}_db:`);
+  // Generate docker-compose.yaml
+  const compose = generateDockerCompose(slug, dbName, selectedDb.client);
+  if (compose) {
     writeFileSync("docker-compose.yaml", compose);
     console.log("  ✓ Updated docker-compose.yaml");
+  } else {
+    if (existsSync("docker-compose.yaml")) {
+      rmSync("docker-compose.yaml");
+      console.log("  ✗ Removed docker-compose.yaml (not needed for SQLite)");
+    }
   }
 
-  // Update root package.json name
+  // Update Prisma schema provider
+  if (hasBackend && existsSync("packages/database/prisma/schema.prisma")) {
+    let schema = readFileSync("packages/database/prisma/schema.prisma", "utf-8");
+    schema = schema.replace(/provider\s*=\s*"postgresql"/, `provider = "${selectedDb.provider}"`);
+    writeFileSync("packages/database/prisma/schema.prisma", schema);
+    console.log(`  ✓ Updated schema.prisma (provider = "${selectedDb.provider}")`);
+  }
+
+  // Update root package.json
   const pkgPath = resolve("package.json");
   const pkg = JSON.parse(readFileSync(pkgPath, "utf-8"));
   pkg.name = projectName;
   pkg.author = "";
-  writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + "\n");
-  console.log("  ✓ Updated package.json");
 
-  // Remove db scripts if backend not selected
-  if (!selectedNames.includes("backend-express")) {
-    delete pkg.scripts["db:generate"];
+  if (!hasBackend) {
     delete pkg.scripts["db:push"];
     delete pkg.scripts["db:migrate"];
     delete pkg.scripts["db:seed"];
     delete pkg.scripts["db:studio"];
     delete pkg.scripts["dev:studio"];
-    writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + "\n");
 
-    // Remove database package if no backend
     const dbPkgPath = resolve("packages/database");
     if (existsSync(dbPkgPath)) {
       rmSync(dbPkgPath, { recursive: true, force: true });
       console.log("  ✗ Removed packages/database (no backend selected)");
     }
   }
+
+  writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + "\n");
+  console.log("  ✓ Updated package.json");
 
   // Initialize git
   console.log("\n→ Initializing git...");
@@ -109,25 +194,18 @@ async function main() {
   console.log("\n→ Installing dependencies...\n");
   execSync("pnpm install", { stdio: "inherit" });
 
-  // Generate Prisma client if backend is selected
-  if (selectedNames.includes("backend-express") && existsSync("packages/database")) {
-    console.log("\n→ Generating Prisma client...");
-    try {
-      execSync("pnpm db:generate", { stdio: "inherit" });
-    } catch {
-      console.log("  ⚠ Prisma generate skipped (run 'pnpm db:generate' after starting the database)");
-    }
-  }
-
   // Self-delete
   rmSync("setup.mjs");
   console.log("\n  ✓ Removed setup script");
 
   console.log("\n╔══════════════════════════════════════╗");
   console.log("║   Setup complete!                    ║");
-  console.log("╚══════════════════════════════════════╝");
-  console.log(`\n  docker compose up -d`);
-  console.log(`  pnpm dev\n`);
+  console.log("╚══════════════════════════════════════╝\n");
+
+  if (compose) {
+    console.log("  docker compose up -d");
+  }
+  console.log("  pnpm dev\n");
 }
 
 main().catch((err) => {
