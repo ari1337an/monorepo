@@ -1,29 +1,12 @@
 # @workspace/database
 
-Knex-based database client with strategy-pattern adapters. Prisma handles migrations only.
+Knex-based database client with strategy-pattern adapters. Prisma handles schema definition only — all queries go through Knex.
 
 ## Supported clients
 
 `"postgres"` | `"mysql"` | `"sqlite"` | `"libsql"`
 
-Inferred automatically from the connection URL protocol.
-
-## Setup
-
-```typescript
-import { createDatabase } from "@workspace/database";
-
-// Auto-detect client from URL
-const db = createDatabase(process.env.DATABASE_URL!);
-
-// Or explicit config
-const db = createDatabase({
-  client: "postgres",
-  connection: process.env.DATABASE_URL!,
-});
-```
-
-### Supported URL formats
+Inferred automatically from `DATABASE_URL`.
 
 | Protocol                      | Client   | Driver                 |
 | ----------------------------- | -------- | ---------------------- |
@@ -34,6 +17,14 @@ const db = createDatabase({
 | `*.sqlite` `*.db` `:memory:`  | sqlite   | better-sqlite3         |
 
 For Turso/LibSQL, pass the auth token in the URL: `libsql://host?authToken=TOKEN`
+
+## Setup
+
+```typescript
+import { createDatabase } from "@workspace/database";
+
+const db = createDatabase(process.env.DATABASE_URL!);
+```
 
 ## Query builder
 
@@ -66,31 +57,51 @@ await db.transaction(async (trx) => {
 await db.disconnect();
 ```
 
-## Access underlying Knex instance
+## Knex instance
 
 ```typescript
 const knex = db.knex;
 ```
 
-## Testing (`@workspace/database/testing`)
+## CLI
+
+```bash
+pnpm db:push       # Push schema (auto-detects local SQLite vs remote)
+pnpm db:migrate    # Create and apply Prisma migration
+pnpm db:seed       # Seed the database
+pnpm db:studio     # Open Prisma Studio
+pnpm db:format     # Format schema files
+pnpm db:test       # Run integration tests (requires Docker)
+```
+
+`db:push` is smart — if `DATABASE_URL` is a local SQLite path it runs `prisma db push`, otherwise it pushes directly via Knex.
+
+## Schema
+
+Schema files live in `schema/`, configured via `prisma.config.ts`:
+
+```
+packages/database/
+├── schema/
+│   ├── schema.prisma    # Prisma schema (sqlite provider)
+│   └── migrations/      # Prisma migrations
+├── src/
+│   ├── index.ts         # createDatabase()
+│   ├── seed.ts          # Seed script
+│   └── push-schema.ts   # Smart db:push
+└── prisma.config.ts     # Prisma v7 config
+```
+
+## Testing
 
 ```typescript
 import { createDatabaseMock, mockReset } from "@workspace/database/testing";
 
 const mockDb = createDatabaseMock();
-
 beforeEach(() => mockReset(mockDb));
 ```
 
-## Migrations (Prisma CLI)
-
-```bash
-pnpm db:migrate    # Create and apply migration
-pnpm db:push       # Push schema without migration file
-pnpm db:studio     # Open Prisma Studio
-pnpm db:seed       # Seed the database
-pnpm db:format     # Format schema.prisma
-```
+Integration tests cover all 4 providers via Docker (Postgres, MySQL) and in-memory (SQLite, LibSQL).
 
 ## Types
 
