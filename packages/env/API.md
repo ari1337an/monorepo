@@ -9,7 +9,7 @@ import { loadEnv } from "@workspace/env";
 
 loadEnv();
 
-// process.env.DATABASE_URL, process.env.DATABASE_CLIENT, etc. are now available
+// process.env.DATABASE_URL etc. are now available
 ```
 
 Call `loadEnv()` once at your service entry point, before accessing any env vars. It's idempotent -- multiple calls are safe.

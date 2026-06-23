@@ -4,24 +4,42 @@ Knex-based database client with strategy-pattern adapters. Prisma handles migrat
 
 ## Supported clients
 
-`"postgres"` | `"mysql"` | `"sqlite"`
+`"postgres"` | `"mysql"` | `"sqlite"` | `"libsql"`
+
+Inferred automatically from the connection URL protocol.
 
 ## Setup
 
 ```typescript
 import { createDatabase } from "@workspace/database";
 
+// Auto-detect client from URL
+const db = createDatabase(process.env.DATABASE_URL!);
+
+// Or explicit config
 const db = createDatabase({
   client: "postgres",
   connection: process.env.DATABASE_URL!,
 });
 ```
 
+### Supported URL formats
+
+| Protocol                      | Client   | Driver                 |
+| ----------------------------- | -------- | ---------------------- |
+| `postgresql://` `postgres://` | postgres | pg                     |
+| `mysql://`                    | mysql    | mysql2                 |
+| `sqlite:` `file:`             | sqlite   | better-sqlite3         |
+| `libsql://`                   | libsql   | @libsql/client (Turso) |
+| `*.sqlite` `*.db` `:memory:`  | sqlite   | better-sqlite3         |
+
+For Turso/LibSQL, pass the auth token in the URL: `libsql://host?authToken=TOKEN`
+
 ## Query builder
 
 ```typescript
 const users = await db.table("User").select("*");
-const user  = await db.table("User").where({ id }).first();
+const user = await db.table("User").where({ id }).first();
 await db.table("User").insert({ id, name, email });
 await db.table("User").where({ id }).update({ name });
 await db.table("User").where({ id }).delete();
@@ -30,7 +48,7 @@ await db.table("User").where({ id }).delete();
 ## Raw SQL
 
 ```typescript
-const result = await db.raw("SELECT * FROM \"User\" WHERE id = ?", [id]);
+const result = await db.raw('SELECT * FROM "User" WHERE id = ?', [id]);
 ```
 
 ## Transactions
@@ -77,7 +95,7 @@ pnpm db:format     # Format schema.prisma
 ## Types
 
 ```typescript
-type SupportedClient = "postgres" | "mysql" | "sqlite";
+type SupportedClient = "postgres" | "mysql" | "sqlite" | "libsql";
 
 interface DatabaseConfig {
   client: SupportedClient;
